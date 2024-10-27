@@ -6,6 +6,7 @@ import LoginForm from '@/pages/LoginForm.vue';
 import RegisterForm from '@/pages/RegisterForm.vue';
 import ForgotPasswordForm from '@/pages/ForgotPasswordForm.vue';
 import UserSetting from '@/components/UserSetting.vue';
+import TestComponent from '@/components/TestComponent.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,10 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/x',
+      component: TestComponent,
+    },
     // {
     //   path: '/todos',
     //   name: 'allToDo',
@@ -46,10 +51,6 @@ const router = createRouter({
     //   // which is lazy-loaded when the route is visited.
     //   component: ToDoPage,
     // },
-    {
-      path: '/setting',
-      component: UserSetting,
-    },
   ],
 });
 

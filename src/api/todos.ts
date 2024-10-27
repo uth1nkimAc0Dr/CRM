@@ -1,6 +1,11 @@
 const BASE_URL = 'https://easydev.club/api/v1';
-import type { MetaResponse, Todo, TodoInfo, TodoRequest } from '@/types/types';
-import { TaskFilter } from '@/types/types';
+import type {
+  MetaResponse,
+  Todo,
+  TodoInfo,
+  TodoRequest,
+  TaskFilter,
+} from '@/types/types';
 
 // остальные не нужно также переписывать с Promise<>?
 export const createTask = async (newTodo: TodoRequest): Promise<Todo | any> => {
@@ -76,9 +81,7 @@ export const getTasks = async (
 
     const response = await fetch(`${BASE_URL}/todos${query}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {

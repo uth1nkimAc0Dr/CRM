@@ -1,103 +1,113 @@
 <template>
-  <div class="auth-layout">
-    <div>Symbol</div>
-    <div class="login-1">
-      <div class="login-2">
-        <h1 class="login-title">Login to your Account</h1>
-        <p class="login-title-description">
-          See what is going on with your business
-        </p>
-      </div>
-
-      <div>
-        <div>
-          <div>
-            <div>Email</div>
-            <input class="data-input" type="text" placeholder="mail@abc.com" />
-          </div>
-
-          <div>
-            <div>Password</div>
-            <input
-              class="data-input"
-              type="text"
-              placeholder="****************"
-            />
-            <div class="remember-forgot">
-              <div>Remember Me</div>
-              <div>
-                <router-link to="/forgot">Forgot Password?</router-link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="login-button">
-          <button class="login">Login</button>
-        </div>
-      </div>
-
-      <div class="content">
-        <!-- <router-view></router-view> -->
-        <!-- <router-link to="/login">Залогиниться</router-link> -->
-      </div>
-    </div>
-
-    <div class="create-account">
-      <router-link to="/register">
-        Not Registered Yet? Create an account</router-link
+  <div>
+    <a-form
+      :model="formState"
+      name="basic"
+      :label-col="{ span: 8 }"
+      :wrapper-col="{ span: 16 }"
+      autocomplete="off"
+      @finish="onFinish"
+      @finishFailed="onFinishFailed"
+      class="login-form"
+    >
+      <a-form-item
+        label="Username"
+        name="username"
+        :rules="[
+          {
+            required: true,
+            message: 'Введите имя пользователя',
+          },
+        ]"
+        class="input-container"
       >
-    </div>
+        <a-input v-model:value="formState.username" />
+      </a-form-item>
+
+      <!-- <a-form-item label="GangNumbers"></a-form-item> -->
+
+      <a-form-item
+        label="Password"
+        name="password"
+        :rules="[
+          { required: true, message: 'Введите пароль' },
+          {
+            min: 6,
+            message: `Пароль не может быть короче 6 символов`,
+          },
+        ]"
+        class="input-container"
+      >
+        <a-input-password v-model:value="formState.password" />
+      </a-form-item>
+
+      <div style="display: flex; justify-content: space-between">
+        <!-- :wrapper-col="{ offset: 8, span: 16 }" -->
+        <a-form-item name="remember" class="remember-forgot">
+          <a-checkbox v-model:checked="formState.remember">
+            Remember me
+          </a-checkbox>
+        </a-form-item>
+        <router-link to="/forgot">Forgot password?</router-link>
+      </div>
+
+      <a-form-item :wrapper-col="{ offset: 8, span: 16 }">
+        <a-button type="primary" html-type="submit">Submit</a-button>
+      </a-form-item>
+
+      <a-form-item :wrapper-col="{ offset: 8, span: 16 }">
+        <div style="display: flex">
+          <p>Don't registered Yet?</p>
+          <p><router-link to="/register"> Create an account </router-link></p>
+        </div>
+      </a-form-item>
+    </a-form>
   </div>
 </template>
+<script lang="ts" setup>
+import { reactive } from 'vue';
 
-<script lang="ts" setup></script>
+interface FormState {
+  username: string;
+  password: string;
+  remember: boolean;
+}
 
-<style lang="scss" scoped>
-// input {
-//   max-width: 100%;
-// }
+const formState = reactive<FormState>({
+  username: '',
+  password: '',
+  remember: true,
+});
 
-.auth-layout {
-  margin: 0 auto;
-  max-width: 420px;
+const onFinish = (values: any) => {
+  console.log('Success:', values);
+};
+
+const onFinishFailed = (errorInfo: any) => {
+  console.log('Failed:', errorInfo);
+};
+</script>
+
+<style scoped>
+div {
   text-align: center;
-
-  .remember-forgot {
-    display: flex;
-    // column надо сделать
-    justify-content: space-around;
-  }
-  .login-button {
-    max-width: 100%;
-    max-height: 50px;
-  }
-  .login-1 {
-    border: 1px solid blueviolet;
-    display: flex;
-    flex-direction: column;
-    gap: 36px;
-  }
-  .login-2 {
-    gap: 3px;
-    display: flex;
-    flex-direction: column;
-    // стоит ли добавлять flex, wrap и тд ради гап, если можно просто margin-bottom
-    .login-title {
-      all: unset;
-      font-size: 36px;
-    }
-    .login-title-description {
-      all: unset;
-    }
-  }
-  .create-account {
-    margin-top: 317px;
-  }
-  .data-input {
-    width: 100%;
-  }
 }
-.content {
+.login-form {
+  margin: 15px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  /* /* margin: 0 auto; */
 }
+/* .input-container {
+  width: 50%;
+  margin: 15px;
+} */
+/* .remember-forgot {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+} */
 </style>
