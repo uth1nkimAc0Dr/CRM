@@ -35,7 +35,12 @@ export type PasswordRequest = {
   password: string;
 }; // обновляет пароль юзера
 
+// export type Token = {
+//   access: string;
+//   refresh: string;
+// }; //делает токены юзера невалидными
+
 export type Token = {
-  access: string;
-  refresh: string;
+  accessToken: string;
+  refreshToken: string;
 }; //делает токены юзера невалидными

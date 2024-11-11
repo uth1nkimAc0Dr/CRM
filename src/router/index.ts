@@ -6,7 +6,8 @@ import LoginForm from '@/pages/LoginForm.vue';
 import RegisterForm from '@/pages/RegisterForm.vue';
 import ForgotPasswordForm from '@/pages/ForgotPasswordForm.vue';
 import UserSetting from '@/components/UserSetting.vue';
-import TestComponent from '@/components/TestComponent.vue';
+// import { useAuthStore } from '@/stores/authStore';
+import { outOfExpired } from '@/api/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,8 +16,8 @@ const router = createRouter({
       path: '/auth',
       component: AuthLayout,
       children: [
-        { path: '/login', component: LoginForm },
-        { path: '/register', component: RegisterForm },
+        { path: '/login', component: LoginForm, name: 'login' },
+        { path: '/register', component: RegisterForm, name: 'register' },
         { path: '/forgot', component: ForgotPasswordForm },
       ],
     },
@@ -39,10 +40,10 @@ const router = createRouter({
         },
       ],
     },
-    {
-      path: '/x',
-      component: TestComponent,
-    },
+    // {
+    //   path: '/x',
+    //   component: TestComponent,
+    // },
     // {
     //   path: '/todos',
     //   name: 'allToDo',
@@ -52,6 +53,44 @@ const router = createRouter({
     //   component: ToDoPage,
     // },
   ],
+});
+
+router.beforeEach(async (to) => {
+  // if (to.name !== 'login' && localStorage.getItem('accessToken')) {
+  //   console.log('не из логина и есть аксес');
+  //   const isAuthenticated = localStorage.getItem('accessToken');
+  //   if (to.meta.auth && !isAuthenticated) {
+  //     router.push('/login');
+  //     console.log('NEXT');
+  //   }
+  //   if (isAuthenticated) {
+  //     console.log('else');
+  //     const sessionValid = await outOfExpired();
+  //     console.log('response is', sessionValid);
+  //     if (sessionValid) {
+  //       return next({ name: 'login' });
+  //     }
+  //     if (sessionValid === undefined || sessionValid === false) {
+  //       // return next('/login');
+  //       // router.push('/login').catch(() => {});
+  //       console.log('a;sdflk');
+  //     }
+  //   }
+  //   // const store = useAuthStore();
+  //   // if (response === undefined || response === false) {
+  //   //   router.push('/login');
+  //   // }
+  //   // await store.outOfExpired();
+  // } else {
+  //   next();
+  // }
+  if (to.name !== 'login' && to.name !== 'register') {
+    const isExpired = await outOfExpired();
+    console.log('Истекло! -', isExpired);
+    if (isExpired) {
+      router.push('/login');
+    }
+  }
 });
 
 export default router;

@@ -47,6 +47,9 @@ import AddTask from '@/components/AddTask.vue';
 import TaskItem from '@/components/TaskItem.vue';
 import type { Todo } from '@/types/types';
 import { TaskFilter } from '@/types/types';
+import { outOfExpired } from '@/api/auth';
+// import { useAuthStore } from '@/stores/authStore';
+// const store = useAuthStore();
 
 const currentFilter = ref<TaskFilter>(TaskFilter.ALL);
 
@@ -55,6 +58,7 @@ const inWorkTasksCount = ref<number>();
 const completedTasksCount = ref<number>();
 
 const changeFilterHandler = async (newFilter: TaskFilter) => {
+  await outOfExpired();
   currentFilter.value = newFilter;
   try {
     await updateTasks();

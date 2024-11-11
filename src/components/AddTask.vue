@@ -9,6 +9,9 @@
 import type { TodoRequest } from '@/types/types';
 import { ref } from 'vue';
 import { createTask } from '@/api/todos';
+// import { useAuthStore } from '@/stores/authStore';
+// const store = useAuthStore();
+import { outOfExpired } from '@/api/auth';
 
 const emit = defineEmits(['addTask']);
 const newTaskTitle = ref<string>('');
@@ -25,6 +28,7 @@ const createTaskHandler = async () => {
   };
 
   try {
+    await outOfExpired();
     await createTask(updatedTodo);
     emit('addTask');
   } catch (error) {

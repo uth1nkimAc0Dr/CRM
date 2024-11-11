@@ -5,9 +5,10 @@
     name="custom-validation"
     :model="formState"
     v-bind="layout"
-    @finish="handleFinish"
+    @finish="handleSubmitProfile"
     @finishFailed="handleFinishFailed"
   >
+    <!-- @finish="handleFinish" -->
     <!-- @validate="handleValidate" -->
     <a-form-item
       has-feedback
@@ -24,6 +25,11 @@
           message: 'Введите меньше 60 символов',
           trigger: 'change',
         },
+        {
+          pattern: /^[a-zA-Zа-яА-Я]{0,90}$/gm,
+          trigger: 'blur',
+          message: 'Символы русского/латинского алфавита!',
+        },
       ]"
     >
       <a-input v-model:value="formState.username" autocomplete="off" />
@@ -34,9 +40,14 @@
       label="Логин"
       name="login"
       :rules="[
-        { required: true, message: 'Введите логин', trigger: 'change' },
-        { min: 2, message: 'Введите больше 1 символа', trigger: 'change' },
-        { max: 60, message: 'Введите меньше 60 символов', trigger: 'change' },
+        { required: true, message: 'Введите логин', trigger: 'blur' },
+        { min: 2, message: 'Введите больше 1 символа', trigger: 'blur' },
+        { max: 60, message: 'Введите меньше 60 символов', trigger: 'blur' },
+        {
+          pattern: /^[a-zA-Z]{0,90}$/gm,
+          trigger: 'blur',
+          message: 'Символы латинского алфавита!',
+        },
       ]"
     >
       <a-input v-model:value="formState.login" autocomplete="off" />
@@ -45,7 +56,7 @@
     <a-form-item
       has-feedback
       label="Пароль"
-      name="password"
+      name="pass"
       :rules="[
         { min: 6, message: 'Больше 5 символов!' },
         { validator: validatePass, trigger: 'change' },
@@ -53,19 +64,23 @@
       ]"
     >
       <a-input
-        v-model:value="formState.password"
+        v-model:value="formState.pass"
         type="password"
         autocomplete="off"
       />
     </a-form-item>
 
-    <!-- name="checkPass" -->
     <a-form-item
       has-feedback
+      name="checkPass"
       label="Подтвердите"
       :rules="[{ validator: validatePass2, trigger: 'change' }]"
     >
-      <a-input v-model:value="checkPass" type="password" autocomplete="off" />
+      <a-input
+        v-model:value="formState.checkPass"
+        type="password"
+        autocomplete="off"
+      />
     </a-form-item>
 
     <a-form-item
@@ -73,8 +88,13 @@
       label="Почта"
       name="email"
       :rules="[
-        { required: true, message: `Введите почту`, trigger: 'change' },
-        { type: 'email', trigger: 'change', message: `Введите реальную почту` },
+        { required: true, message: `Введите почту`, trigger: 'blur' },
+        {
+          // pattern: /[a-z0-9]+@[a-z0-9]+.[a-z]+/gm,
+          pattern: /^[a-z0-9]+@[a-z0-9]+.[a-z]+$/gm,
+          trigger: 'blur',
+          message: `Введите реальную почту`,
+        },
       ]"
     >
       <a-input v-model:value="formState.email" autocomplete="off" />
@@ -83,44 +103,47 @@
     <a-form-item
       has-feedback
       label="Phone"
-      name="phoneNumber"
+      name="phone"
       :rules="[
         {
-          required: true,
+          required: false,
           message: `Введите номер телефона`,
           trigger: 'change',
         },
         {
-          pattern: /\+[0-999]{1}[0-9]{3}[0-9]{3}[0-9]{2}[0-9]{2}/,
+          // pattern: /\+[0-999]{1}[0-9]{3}[0-9]{3}[0-9]{2}[0-9]{2}/,
+          pattern: /^\+[0-999]{1}[0-9]{3}[0-9]{3}[0-9]{2}[0-9]{2}$/gm,
           message: `Введите в формате: +xxxxxxxxxxx`,
           trigger: 'change',
         },
       ]"
     >
-      <a-input v-model:value="formState.phoneNumber" />
+      <a-input v-model:value="formState.phone" />
     </a-form-item>
 
     <!-- :wrapper-col="{ span: 14, offset: 4 }" -->
+    <!-- <a-form-item>
+    </a-form-item> -->
+
     <a-form-item>
-      <a-button
-        type="primary"
-        html-type="submit"
-        @click="
-          () => {
-            createProfileHandler;
-          }
-        "
-      >
-        <!-- @click="() => console.log(`@click happened`)" -->
-        Submit
-      </a-button>
-      <a-button style="margin-left: 10px" @click="resetForm">Reset</a-button>
-      <button
-        @click="() => createProfileHandler()"
-        style="margin: 20px; padding: 20px"
-      >
-        CLICK
-      </button>
+      <div>
+        <div>
+          <a-button type="primary" html-type="submit">
+            Создать аккаунт
+          </a-button>
+
+          <a-button style="margin-left: 10px" @click="resetForm">
+            Очистить все поля
+          </a-button>
+        </div>
+
+        <a-button style="margin: 20px auto; height: 50px">
+          <router-link to="/login">
+            <p>У меня есть аккаунт.</p>
+            <p>Войти</p>
+          </router-link>
+        </a-button>
+      </div>
     </a-form-item>
   </a-form>
 </template>
@@ -129,38 +152,58 @@
 import { reactive, ref } from 'vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { FormInstance } from 'ant-design-vue';
-import { createProfile } from '@/api/auth';
+import { createUser } from '@/api/auth';
+import type { UserRegistration } from '@/types/authInterfaces';
 
 interface FormState {
   username: string;
   login: string;
-  password: string;
+  pass: string;
+  checkPass: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
 }
-// checkPass: string;
-const checkPass = ref<string>();
 
 const formRef = ref<FormInstance>();
-
 const formState = reactive<FormState>({
   username: '',
   login: '',
-  password: '',
+  pass: '',
+  checkPass: '',
   email: '',
-  phoneNumber: '',
+  phone: '',
 });
-// checkPass: '',
+
+// вызывается после Создать аккаунт(сработает, если валидация пропустит)
+const handleSubmitProfile = async (values: FormState) => {
+  console.log(values, formState);
+  console.log('handle');
+  const newObj: UserRegistration = {
+    login: formState.login,
+    username: formState.username,
+    password: formState.pass,
+    email: formState.email,
+    phoneNumber: formState.phone,
+  };
+
+  try {
+    await createUser(newObj);
+    alert('Пройдите на страницу входа');
+  } catch (error) {
+    if (error instanceof Error && error.message === '409') {
+      alert('Такой логин или почта уже существует');
+    } else {
+      alert(`Ошибка при создании профиля: ${error}`);
+    }
+  }
+};
 
 const validatePass = async (_rule: Rule, value: string) => {
   if (value === '') {
     return Promise.reject('Введите пароль');
   } else {
-    if (checkPass.value !== '' && checkPass.value === formState.password) {
-      formRef?.value.validate('checkPass.value');
-      // console.log('CheckPass не равно пустота епта');
-      console.log('Все совпало');
-      return Promise.reject('Все совпало'); //сообщение выведется после клика
+    if (formState.checkPass !== '') {
+      formRef?.value.validateFields('checkPass');
       //я не дал default value, so TS extends:"мб и undefined?"(когда знач не задано)
       //formRef!.value - "хоть это и мб null или undefined, оно не будет, if it does let if fail
       //formRef?.value - "TS, call da method only if значение не является ни null, ни undefined
@@ -172,7 +215,7 @@ const validatePass = async (_rule: Rule, value: string) => {
 const validatePass2 = async (_rule: Rule, value: string) => {
   if (value === '') {
     return Promise.reject('Введите снова пароль');
-  } else if (value !== formState.password) {
+  } else if (value !== formState.pass) {
     return Promise.reject('Не совпадают!');
   } else {
     return Promise.resolve('');
@@ -184,41 +227,23 @@ const layout = {
   wrapperCol: { span: 14 },
 };
 
-interface ProfileInterface {
-  login: string;
-  username: string;
-  password: string;
-  email: string;
-  phoneNumber: string;
-}
+// const handleFinish = (values: FormState) => {
+// console.log('handleFinish');
+// console.log(values, formState);
+// handleSubmitProfile();
+// его надо асинк делать, раз он вызывает асинк? Или если он занимается только этим, то нет необходимости?
+// };
 
-const Profile1 = reactive<ProfileInterface>({
-  login: 'asdfloginaaq',
-  username: 'usernameq',
-  password: 'stasdf100q',
-  email: 'asdf125q@gmail.com',
-  phoneNumber: '+19995550102',
-});
-
-const createProfileHandler = async () => {
-  try {
-    await createProfile(formState);
-  } catch (error) {
-    alert(`Ошибка при создании задачи: ${error}`);
-  }
-};
-
-const handleFinish = (values: FormState) => {
-  console.log(values, formState);
-};
 const handleFinishFailed = (errors: any) => {
   console.log(errors);
-  console.log('сработал хэндлФинишФейлд');
 };
 
 const resetForm = () => {
   formRef?.value.resetFields();
 };
+
+// 409 = такой логин или почта уже существуют
+
 // handleValidate выводит результат каждого поля после его заполнения
 // const handleValidate = (...args: any) => {
 //   console.log(`handleValidate: ${args}`);
@@ -259,6 +284,21 @@ const resetForm = () => {
 //     }
 //   }
 // };
+
+// interface ProfileInterface {
+//   login: string;
+//   username: string;
+//   password: string;
+//   email: string;
+//   phone: string;
+// }
+// const Profile1 = reactive<ProfileInterface>({
+//   login: 'asdfloginaaq',
+//   username: 'usernameq',
+//   password: 'stasdf100q',
+//   email: 'asdf125q@gmail.com',
+//   phone: '+19995550102',
+// });
 </script>
 
 <!-- <template>

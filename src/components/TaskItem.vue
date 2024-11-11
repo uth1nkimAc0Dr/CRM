@@ -42,6 +42,9 @@
 import { ref, defineProps, reactive } from 'vue';
 import { changeTask, removeTask } from '@/api/todos';
 import type { Todo, TodoRequest } from '@/types/types';
+// import { useAuthStore } from '@/stores/authStore';
+import { outOfExpired } from '@/api/auth';
+// const store = useAuthStore();
 
 const isEditing = ref<boolean>(true);
 const emit = defineEmits(['remove', 'change', 'changeCompleted']);
@@ -52,6 +55,7 @@ const localTask = reactive<Todo>({ ...props.task });
 //удаление задачи через "delete"
 const removeTaskHandler = async (id: number) => {
   try {
+    await outOfExpired();
     await removeTask(id);
   } catch (error) {
     console.error('Error removing task', error);
@@ -60,13 +64,15 @@ const removeTaskHandler = async (id: number) => {
 };
 
 // при "отменить" мы возвращаем оригинальный title
-const resetTaskHandler = () => {
+const resetTaskHandler = async () => {
+  await outOfExpired();
   switchEditing();
   localTask.title = props.task.title;
 };
 
 // при "сохранить" мы пушим новый title
-const saveTaskhandler = () => {
+const saveTaskhandler = async () => {
+  await outOfExpired();
   switchEditing(), changeTaskHandler(localTask.title);
 };
 
@@ -80,6 +86,7 @@ const changeTaskHandler = async (title: string) => {
   //меняю только title, поэтому только title засовываю и передаю
   if (props.task.title != title) {
     try {
+      await outOfExpired();
       await changeTask(localTask.id, newTodo);
     } catch (error) {
       console.error('Error changing task', error);
@@ -94,6 +101,7 @@ const ChangeCompletedHandler = async (isDone: boolean) => {
   //в данном случае для вызова changeTask мне похуй на title, так как я работаю с isDone,
   //поэтому в аргументах его не передаю
   try {
+    await outOfExpired();
     await changeTask(localTask.id, newTodo);
   } catch (error) {
     console.error('error changing complete', error);

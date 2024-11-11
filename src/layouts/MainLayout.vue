@@ -26,7 +26,6 @@
 // import { ref } from 'vue';
 // import { MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons-vue';
 import SideBar from '@/components/SideBar.vue';
-// const collapsed = ref<boolean>(true);
 </script>
 
 <style scoped>
