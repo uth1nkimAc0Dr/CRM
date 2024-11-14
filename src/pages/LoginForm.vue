@@ -69,6 +69,15 @@
           Get Profile
         </a-button>
 
+        <a-button style="margin: 15px" @click="isAccessExpired()">
+          isAccessExpired
+        </a-button>
+
+        <!-- <a-button style="margin: 15px"> положить рефреш в стору </a-button> -->
+        <!-- @click -->
+
+        <!-- <a-button style="margin: 15px"> вытащить рефреш из сторы </a-button> -->
+
         <a-button style="margin: 15px" @click="() => refresh()">
           Refresh Token
         </a-button>
@@ -81,6 +90,7 @@
   </div>
 </template>
 <script lang="ts" setup>
+import { isAccessExpired } from '@/api/auth';
 import { reactive } from 'vue';
 import { getProfile, userAuth } from '@/api/auth';
 // import { ref } from 'vue';

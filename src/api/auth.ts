@@ -1,23 +1,27 @@
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 import router from '@/router';
+import type { InternalAxiosRequestConfig } from 'axios';
+import type { CustomAxiosRequestConfig } from 'axios';
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  skipAuth?: boolean;
+}
 // import { useAuthStore } from '@/stores/authStore';
 // const store = useAuthStore();
 const BASE_URL = 'https://easydev.club/api/v1';
 
+// для перед todo-handleraми
 export const outOfExpired = async (): Promise<boolean | undefined> => {
-  //boolean
   const refreshTry = async () => {
     console.log('refreshTry');
     let refreshResult = false; //истек
     try {
-      refreshResult = await refresh();
-      console.log('refreshResult !s', refreshResult);
+      refreshResult = await refresh(); //console.log('refreshResult !s', refreshResult);
     } catch (error) {
       refreshResult = true;
       console.log('Ошибка обновления токена');
       router.push('/login'); //с любой ошибки выпинываем(останется false)
       throw error;
-      // console.log('Перебросило');
     }
     return refreshResult;
   };
@@ -29,14 +33,14 @@ export const outOfExpired = async (): Promise<boolean | undefined> => {
       const payloadData = atob(tokenParts[1]);
       const payloadDataParsed = JSON.parse(payloadData); //обернуть в try-catch?
       const payloadDataExp = payloadDataParsed.exp;
-      const currentTime = Math.floor(Date.now() / 1000);
 
-      console.log('разница', payloadDataExp - currentTime);
-      if (payloadDataExp < currentTime + 100) {
-        console.log('refreshTry(accessTimeOut)');
+      const now = Math.floor(Date.now() * 0.001);
+      console.log('разница', payloadDataExp - now);
+      if (payloadDataExp - now < 300) {
+        console.log('мало! Разница:', payloadDataExp - now);
         const refreshSuccess = await refreshTry();
         if (!refreshSuccess) {
-          return true;
+          return true; //
         }
       } else {
         return false;
@@ -65,22 +69,65 @@ export const outOfExpired = async (): Promise<boolean | undefined> => {
 };
 
 const apiClient = axios.create({
+  // validateStatus: (status) => status < 500,
   baseURL: BASE_URL,
-  headers: {
+  headers: new AxiosHeaders({
     'Content-Type': 'application/json',
-  },
+  }),
 });
 
 apiClient.interceptors.request.use(
-  (config) => {
-    // console.log('здесь каждый');
-    // outOfExpired();
-
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    if (config.skipAuth) {
+      return config;
     }
-    return config;
+
+    let token = localStorage.getItem('accessToken');
+    if (token) {
+      //&& refreshToken?
+      try {
+        if (await isAccessExpired()) {
+          try {
+            await refresh();
+            token = localStorage.getItem('accessToken');
+            if (token) {
+              config.headers = config.headers || {};
+              config.headers['Authorization'] = `Bearer ${token}`;
+            } else {
+              throw new Error(
+                `Не удалость получить новый accessToken после обновления `,
+              );
+            }
+          } catch (error) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            router.push('/login');
+            return Promise.reject(error);
+          }
+        } else {
+          config.headers = config.headers || {};
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (error) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        router.push('/login');
+        return Promise.reject(error);
+      }
+    } else {
+      router.push('/login');
+    }
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`;
+    // }
+
+    //возвращаем пропатченный конфиг с токеном в заголовке
+    return {
+      ...config,
+      headers: {
+        ['Authorization']: `Bearer ${token}`,
+      },
+    };
   },
   (error) => Promise.reject(error),
 );
@@ -92,6 +139,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response) {
       if (error.response.status === '401') {
+        alert('Закончилось время пользования, авторизуйтесь заново ');
         router.push('/login');
       } else {
         console.error(error);
@@ -101,17 +149,11 @@ apiClient.interceptors.response.use(
   },
 );
 
-// если токен имеется, то headers
-// interceptor: 401 -> обновление
-// каждый запрос мы проверяем
-
 import type {
   UserRegistration,
   AuthData,
   RefreshToken,
   Profile,
-  // ProfileRequest,
-  // PasswordRequest,
   Token,
 } from '@/types/authInterfaces';
 
@@ -119,7 +161,9 @@ export const createUser = async (
   userData: UserRegistration,
 ): Promise<Profile | any> => {
   await apiClient
-    .post<Profile>(`/auth/signup`, userData)
+    .post<Profile>(`/auth/signup`, userData, {
+      skipAuth: true,
+    })
     .then((response) => {
       const profile = response.data;
       return profile;
@@ -129,18 +173,12 @@ export const createUser = async (
       throw error;
     });
 };
-// if (!response) {
-//   console.log('!response');
-//   console.log('response is', response);
-//   console.log('response.data is', response.data);
-//   throw new Error(`${response.status}`);
-// }
-
-// export const userAuth = async(userData: AuthData): <Token> => {
 
 export const userAuth = async (userData: AuthData): Promise<Token | any> => {
   try {
-    const response = await apiClient.post<Token>(`/auth/signin`, userData);
+    const response = await apiClient.post<Token>(`/auth/signin`, userData, {
+      skipAuth: true,
+    });
 
     if (response.data) {
       const data: Token = response.data; // if (error instanceof Error && error.message.trim() === '401') {
@@ -167,25 +205,94 @@ export const userAuth = async (userData: AuthData): Promise<Token | any> => {
 
 export const refresh = async (): Promise<Token | any> => {
   const refreshToken: RefreshToken = localStorage.getItem('refreshToken');
+  // if (!refreshToken) {throw new Error(`RefreshToken отсутствует`);}
+  apiClient
+    .post<Token>(`/auth/refresh`, { refreshToken }, { skipAuth: true })
 
-  await apiClient
-    .post<Token>(`/auth/refresh`, refreshToken)
     .then((response) => {
-      localStorage.setItem('refreshToken', response.data.refreshToken);
-      localStorage.setItem('accessToken', response.data.accessToken);
-
-      console.log(`reponse в .then is: `, response);
-      if (!response.data) {
-        throw new Error(`${response.status}`);
+      if (response.data) {
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+        localStorage.setItem('accessToken', response.data.accessToken);
+        return response.data;
+        //либо reponse, либо error? третьего не дано?
+      } else {
+        throw new Error(`Ответ сервера ${response.status}`);
       }
-      return response;
+    })
+
+    .catch((error) => {
+      console.error(`Ошибка обновления токена: ${error}`);
+      throw error;
+    }); //console.log('refreshNULLsya');
+};
+
+export const getProfile = async (): Promise<Profile | any> => {
+  apiClient
+    .get(`/user/profile`)
+    .then((response) => {
+      const profile = response;
+      return profile;
     })
     .catch((error) => {
-      console.error(`${error}`);
+      console.log(`error trouble is ${error}`);
       throw error;
     });
-  console.log('refreshNULLsya');
 };
+
+// для index.ts + auth.interceptors
+export const isAccessExpired = async (): Promise<boolean> => {
+  const accessToken = localStorage.getItem('accessToken');
+  const tokenParts = accessToken.split('.');
+  const payloadData = atob(tokenParts[1]);
+  const payloadDataParsed = JSON.parse(payloadData); //обернуть в try-catch?
+  const payloadDataExp = payloadDataParsed.exp;
+
+  const now = Math.floor(Date.now() * 0.001);
+  console.log('разница:', payloadDataExp - now);
+  if (payloadDataExp - now < 300) {
+    console.log('мало!! Разница:', payloadDataExp - now);
+    return true;
+  } else {
+    return false;
+  }
+};
+
+// try {
+//   const accessToken = localStorage.getItem('accessToken');
+//   // почему не await?
+//   if (!accessToken) {
+//     throw new Error(`С токеном проблемы`);
+//   }
+//   const response = await apiClient.get(`/user/profile`);
+//   // headers: {Authorization: `Bearer ${accessToken}`}
+
+// новая версия
+// apiClient.interceptors.response.use(
+//   async(
+//     (response) => {
+//       const { status } = response;
+
+//       if (status === 401) {
+//         const accessToken = localStorage.getItem('accessToken');
+//         if (accessToken) {
+//           const _response = await.apiClient({
+//             headers: {
+//               common: {['Authorization']: `Bearer ${accessToken}`},
+//             },
+//           });
+//           return _response;
+//         } else {
+//           // разлог
+//           // роутер-кик?
+//           // router.push('/login');
+//         }
+//       }
+//       return response;
+//     },
+//     (error: any) => Promise.reject(error),
+//   ),
+// );
+
 // try {
 //   const response = await apiClient.post(`/auth/refresh`, refreshToken);
 //   const data: Token = response.data;
@@ -198,124 +305,3 @@ export const refresh = async (): Promise<Token | any> => {
 //   console.log(`${error}`);
 //   throw error;
 // }
-
-export const getProfile = async (): Promise<Profile> => {
-  try {
-    const accessToken = localStorage.getItem('accessToken');
-    // почему не await?
-    if (!accessToken) {
-      throw new Error(`С токеном проблемы`);
-    }
-    const response = await apiClient.get(`/user/profile`);
-    // headers: {Authorization: `Bearer ${accessToken}`}
-
-    if (!response.data) {
-      throw new Error(`${response.status}`);
-    }
-
-    const profile: Profile = await response.data;
-    return profile;
-  } catch (error) {
-    console.log(`error trouble is ${error}`);
-    throw error;
-  }
-};
-
-// export const signIn = async (signInData: AuthData): Promise<Token | any> => {
-//   try {
-//     const response = await fetch(`${BASE_URL}/auth/signin`, {
-//       method: 'POST',
-//       headers: {
-//         // accept: 'application/json',
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(signInData),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`Ошбика авторизации ${response.status}`);
-//     }
-//     const data: Token = await response.json();
-//     console.log('data', data);
-//     // const refreshToken: Token = await response.json(); //при ф5 берем для новой пары
-//     // localStorage.setItem('refreshToken', data.refresh);
-//     console.log(data.accessToken);
-//     localStorage.setItem('accessToken', data.accessToken);
-//     localStorage.setItem('refreshToken', data.refreshToken);
-//     console.log('aces is', data.accessToken);
-//     console.log('refre is', data.refreshToken);
-//   } catch (error) {
-//     console.log(error);
-//     throw error;
-//   }
-// };
-// import tokens from '@/pages/LoginForm.vue';
-
-// export const refresh = async (): Promise<Token | any> => {
-//   try {
-//     const refreshToken = localStorage.getItem('refreshToken');
-//     const response = await fetch(`${BASE_URL}/auth/refresh`, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify({ refreshToken }),
-//     });
-//     if (!response.ok) {
-//       throw new Error(`${response.status}`);
-//     }
-//     const data: Token = await response.json();
-//     localStorage.setItem('refreshToken', data.refreshToken);
-//     localStorage.setItem('accessToken', data.accessToken);
-//     console.log('Зарефрешили');
-//   } catch (error) {
-//     console.log(`refresh Error ${error}`);
-//     throw error;
-//   }
-// };
-
-// access для запросов авторизации
-// refresh - если access устарел, то получаю новый
-// export const getProfile = async (): Promise<Profile> => {
-//   const accessToken = localStorage.getItem('accessToken');
-//   console.log('getProfileCalled');
-//   try {
-//     if (!accessToken) {
-//       throw new Error('Нет токена доступа');
-//     }
-//     const response = await fetch(`${BASE_URL}/user/profile`, {
-//       method: 'GET',
-//       headers: {
-//         Authorization: `Bearer ${accessToken}`,
-//       },
-//     });
-//     if (!response.ok) {
-//       throw new Error(`${response.status}`);
-//     }
-//     const profile: Profile = await response.json();
-//     return profile;
-//   } catch (error) {
-//     console.log(`ошибка при получении профиля ${error}`);
-//     throw error;
-//   }
-// };
-
-// console.log(`createProfileError is ${error}`);
-// throw error;
-
-// export const signIn = async (signInData: AuthData): Promise<Token | any> => {
-//   try {
-//     const response = await fetch(`${BASE_URL}/auth/signin`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(signInData),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`${response.status}`);
-//     }
-//   } catch (error) {
-//     // console.log('asdf');
-//     throw error;
-//   }
-// };

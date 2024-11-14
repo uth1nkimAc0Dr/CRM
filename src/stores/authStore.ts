@@ -4,14 +4,9 @@
 // функция стейт забивает, а мы уже в саму компоненту данные из стора хватаем
 
 import { defineStore } from 'pinia';
-import router from '@/router';
-import { refresh } from '@/api/auth';
+import { ref } from 'vue';
 
 export const useAuthStore = defineStore('authStore', () => {
-  const edf = () => {
-    console.log('adsf');
-    router.push('/login');
-    refresh();
-  };
-  return {};
+  const refreshToken = ref<string>('');
+  return { refreshToken };
 });
