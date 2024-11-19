@@ -6,8 +6,7 @@ import LoginForm from '@/pages/LoginForm.vue';
 import RegisterForm from '@/pages/RegisterForm.vue';
 import ForgotPasswordForm from '@/pages/ForgotPasswordForm.vue';
 import UserSetting from '@/components/UserSetting.vue';
-import { refresh } from '@/api/auth';
-import { isAccessExpired } from '@/api/auth';
+import { outOfExpired } from '@/api/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,40 +48,7 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (to.name !== 'login' && to.name !== 'register') {
-    let token = localStorage.getItem('accessToken');
-    if (token) {
-      try {
-        if (await isAccessExpired()) {
-          try {
-            await refresh();
-            token = localStorage.getItem('accessToken');
-            if (token) {
-              // config.headers = config.headers || {};
-              // config.headers['Authorization'] = `Bearer ${token}`;
-              console.log('token is true');
-            } else {
-              throw new Error(
-                `Не удалость получить новый accessToken после обновления `,
-              );
-            }
-          } catch (error) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            router.push('/login');
-            return Promise.reject(error);
-          }
-        } else {
-          console.log('Access Token is not Expired');
-        }
-      } catch (error) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        router.push('/login');
-        return Promise.reject(error);
-      }
-    } else {
-      router.push('/login');
-    }
+    outOfExpired();
   }
 });
 

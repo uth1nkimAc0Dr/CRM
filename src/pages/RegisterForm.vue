@@ -1,5 +1,4 @@
 <template>
-  <!-- :rules="rules" -->
   <a-form
     ref="formRef"
     name="custom-validation"
@@ -8,8 +7,6 @@
     @finish="handleSubmitProfile"
     @finishFailed="handleFinishFailed"
   >
-    <!-- @finish="handleFinish" -->
-    <!-- @validate="handleValidate" -->
     <a-form-item
       has-feedback
       label="Имя пользователя"
@@ -17,8 +14,9 @@
       :rules="[
         {
           required: true,
+          min: 1,
           message: 'Введите имя пользователя',
-          trigger: 'change',
+          trigger: 'blur',
         },
         {
           max: 60,
@@ -59,7 +57,7 @@
       name="pass"
       :rules="[
         { min: 6, message: 'Больше 5 символов!' },
-        { validator: validatePass, trigger: 'change' },
+        { validator: validatePass, trigger: 'blur' },
         // это не велосипед?
       ]"
     >
@@ -74,7 +72,7 @@
       has-feedback
       name="checkPass"
       label="Подтвердите"
-      :rules="[{ validator: validatePass2, trigger: 'change' }]"
+      :rules="[{ validator: validatePass2, trigger: 'blur' }]"
     >
       <a-input
         v-model:value="formState.checkPass"
@@ -120,10 +118,6 @@
     >
       <a-input v-model:value="formState.phone" />
     </a-form-item>
-
-    <!-- :wrapper-col="{ span: 14, offset: 4 }" -->
-    <!-- <a-form-item>
-    </a-form-item> -->
 
     <a-form-item>
       <div>
@@ -188,7 +182,7 @@ const handleSubmitProfile = async (values: FormState) => {
 
   try {
     await createUser(newObj);
-    alert('Пройдите на страницу входа');
+    alert('Регистрация прошла успешно. Пройдите на страницу входа');
   } catch (error) {
     if (error instanceof Error && error.message === '409') {
       alert('Такой логин или почта уже существует');
@@ -206,7 +200,7 @@ const validatePass = async (_rule: Rule, value: string) => {
       formRef?.value.validateFields('checkPass');
       //я не дал default value, so TS extends:"мб и undefined?"(когда знач не задано)
       //formRef!.value - "хоть это и мб null или undefined, оно не будет, if it does let if fail
-      //formRef?.value - "TS, call da method only if значение не является ни null, ни undefined
+      //formRef?.value - "TS, call da mёethod only if значение не является ни null, ни undefined
     }
     return Promise.resolve();
   }
@@ -227,13 +221,6 @@ const layout = {
   wrapperCol: { span: 14 },
 };
 
-// const handleFinish = (values: FormState) => {
-// console.log('handleFinish');
-// console.log(values, formState);
-// handleSubmitProfile();
-// его надо асинк делать, раз он вызывает асинк? Или если он занимается только этим, то нет необходимости?
-// };
-
 const handleFinishFailed = (errors: any) => {
   console.log(errors);
 };
@@ -241,64 +228,6 @@ const handleFinishFailed = (errors: any) => {
 const resetForm = () => {
   formRef?.value.resetFields();
 };
-
-// 409 = такой логин или почта уже существуют
-
-// handleValidate выводит результат каждого поля после его заполнения
-// const handleValidate = (...args: any) => {
-//   console.log(`handleValidate: ${args}`);
-// };
-
-// interface PhoneInputFormItemProps {
-//   skipValidityCheck?: boolean;
-//   errorMessage?: string;
-//   // Recognise local phone numbers in country
-//   // default: US
-//   countryCode?: string;
-// }
-
-// interface PhoneInputProps {}
-
-// const rules: Record<string, Rule[]> = {
-//   // name: [{ required: true, message: 'Введите имя пользователя' }],
-//   password: [{ required: true, validator: validatePass, trigger: 'change' }],
-//   checkPass: [{ validator: validatePass2, trigger: 'change' }],
-//   age: [{ validator: checkAge, trigger: 'change' }],
-// };
-
-// <a-form-item label="Age" name="age" class="input-container">
-//   <a-input v-model:value="formState.age" />
-// </a-form-item>
-
-// const checkAge = async (_rule: Rule, value: number) => {
-//   if (!value) {
-//     return Promise.reject('Please input the age');
-//   }
-//   if (!Number.isInteger(value)) {
-//     return Promise.reject('Please input digits');
-//   } else {
-//     if (value < 18) {
-//       return Promise.reject('Age must be greater than 18');
-//     } else {
-//       return Promise.resolve();
-//     }
-//   }
-// };
-
-// interface ProfileInterface {
-//   login: string;
-//   username: string;
-//   password: string;
-//   email: string;
-//   phone: string;
-// }
-// const Profile1 = reactive<ProfileInterface>({
-//   login: 'asdfloginaaq',
-//   username: 'usernameq',
-//   password: 'stasdf100q',
-//   email: 'asdf125q@gmail.com',
-//   phone: '+19995550102',
-// });
 </script>
 
 <!-- <template>
@@ -350,59 +279,8 @@ const resetForm = () => {
       <div class="content"></div>
     </div>
 
-    <div class="create-account">
-      <router-link to="/register">
-        Not Registered Yet? Create an account</router-link
-      >
-    </div>
+
   </div>
 </template>
 
 <script lang="ts" setup></script> -->
-
-<!-- <style lang="scss" scoped>
-// input {
-//   max-width: 100%;
-// }
-
-.auth-layout {
-  margin: 0 auto;
-  max-width: 420px;
-  text-align: center;
-
-  .remember-forgot {
-    display: flex;
-    // column надо сделать
-    justify-content: space-around;
-  }
-  .login-button {
-    max-width: 100%;
-    max-height: 50px;
-  }
-  .login-1 {
-    border: 1px solid blueviolet;
-    display: flex;
-    flex-direction: column;
-    gap: 36px;
-  }
-  .login-2 {
-    gap: 3px;
-    display: flex;
-    flex-direction: column;
-    // стоит ли добавлять flex, wrap и тд ради гап, если можно просто margin-bottom
-    .login-title {
-      all: unset;
-      font-size: 36px;
-    }
-    .login-title-description {
-      all: unset;
-    }
-  }
-  .create-account {
-    margin-top: 317px;
-  }
-  .data-input {
-    width: 100%;
-  }
-}
-</style> -->
