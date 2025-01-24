@@ -6,6 +6,7 @@ import type {
   TodoRequest,
   TaskFilter,
 } from '@/types/types';
+// import { AxiosHeaders } from 'axios';
 
 // остальные не нужно также переписывать с Promise<>?
 export const createTask = async (newTodo: TodoRequest): Promise<Todo | any> => {
@@ -95,3 +96,12 @@ export const getTasks = async (
     throw error;
   }
 };
+
+// import axios from 'axios';
+// const apiClient = axios.create({
+//   baseURL: BASE_URL,
+//   headers: new AxiosHeaders({
+//     'Content-Type': 'application/json',
+//   }),
+// });
+// сюда также интерсептор или же экспортнуть как-то из auth?

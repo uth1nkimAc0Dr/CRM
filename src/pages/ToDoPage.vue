@@ -66,6 +66,8 @@ const changeFilterHandler = async (newFilter: TaskFilter) => {
     alert(`failed to change filter:, ${error}`);
   }
 };
+const tasks = ref<Todo[]>([]);
+import { getTasks } from '@/api/todos';
 
 const updateTasks = async () => {
   try {
@@ -79,9 +81,6 @@ const updateTasks = async () => {
     console.log('failed to fetch tasks:', error);
   }
 };
-
-const tasks = ref<Todo[]>([]);
-import { getTasks } from '@/api/todos';
 
 onMounted(async () => {
   try {

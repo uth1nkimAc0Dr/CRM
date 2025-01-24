@@ -25,8 +25,6 @@
         <a-input v-model:value="formState.login" />
       </a-form-item>
 
-      <!-- <a-form-item label="GangNumbers"></a-form-item> -->
-
       <a-form-item
         label="Password"
         name="password"
@@ -42,9 +40,9 @@
         <a-input-password v-model:value="formState.password" />
       </a-form-item>
 
-      <div style="display: flex; justify-content: space-between">
+      <div class="remember-forget">
         <!-- :wrapper-col="{ offset: 8, span: 16 }" -->
-        <a-form-item name="remember" class="remember-forgot">
+        <a-form-item name="remember">
           <a-checkbox>
             <!-- <a-checkbox v-model:checked="formState.remember"> -->
             Remember me
@@ -58,34 +56,19 @@
       </a-form-item>
 
       <a-form-item :wrapper-col="{ offset: 8, span: 16 }">
-        <div style="display: flex">
+        <div class="signin-footer">
           <p>Don't registered Yet?</p>
           <p><router-link to="/register"> Create an account </router-link></p>
         </div>
-      </a-form-item>
-
-      <a-form-item>
-        <a-button style="margin: 15px" @click="getProfile()">
-          Get Profile
-        </a-button>
-
-        <a-button style="margin: 15px" @click="() => refresh()">
-          Refresh Token
-        </a-button>
-
-        <!-- <a-button style="margin: 15px" @click="() => store.decodeToken()">
-          decodeToken
-        </a-button> -->
       </a-form-item>
     </a-form>
   </div>
 </template>
 <script lang="ts" setup>
 import { reactive } from 'vue';
-import { getProfile, userAuth } from '@/api/auth';
+import { userAuth } from '@/api/auth';
 // import { ref } from 'vue';
 // import type { Token } from '@/types/authInterfaces';
-import { refresh } from '@/api/auth';
 import router from '@/router';
 
 interface FormState {
@@ -102,15 +85,8 @@ const handleSignIn = async (values: any) => {
     }
   } catch (error) {
     console.error(`Ошибка авторизации ${error}`);
+    throw error;
   }
-  // if (await userAuth(formState)) {
-  //   // возвращает значение только когда мы входим
-  //   console.log('userAuth(formState) is', userAuth(formState));
-  //   //если все четко(?)
-  //   router.push('/todos');
-  // } else {
-  //   alert('Неверные логин или пароль!');
-  // }
   console.log('Success:', values);
 };
 
@@ -126,6 +102,9 @@ const onFinishFailed = (errorInfo: any) => {
 </script>
 
 <style scoped>
+.signin-footer {
+  display: flex;
+}
 div {
   text-align: center;
 }
@@ -137,6 +116,10 @@ div {
   justify-content: flex-start;
   align-items: center;
   /* /* margin: 0 auto; */
+}
+.remember-forget {
+  display: flex;
+  justify-content: space-between;
 }
 /* .input-container {
   width: 50%;
