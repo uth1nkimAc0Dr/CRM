@@ -7,6 +7,8 @@ import RegisterForm from '@/pages/RegisterForm.vue';
 import ForgotPasswordForm from '@/pages/ForgotPasswordForm.vue';
 import UserSetting from '@/components/UserSetting.vue';
 import { outOfExpired } from '@/api/auth';
+import UserList from '@/components/UserList.vue';
+import AnalyticsPage from '@/components/AnalyticsPage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +39,14 @@ const router = createRouter({
           path: '/setting',
           component: UserSetting,
         },
+        {
+          path: 'users',
+          component: UserList,
+        },
+        {
+          path: 'other',
+          component: AnalyticsPage,
+        },
       ],
     },
     // {
@@ -47,6 +57,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  console.log('beforeEach ');
   if (to.name !== 'login' && to.name !== 'register') {
     outOfExpired();
   }

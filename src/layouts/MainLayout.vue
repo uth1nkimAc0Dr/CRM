@@ -1,34 +1,71 @@
 <template>
-  <a-layout>
-    <SideBar />
-    <a-layout>
+  <a-layout style="display: flex; flex-direction: row">
+    <SideBarv ref="child" @newSelect="goToComponent" />
+    <div class="Header-Content">
       <a-layout-header class="layout-header">
-        <!-- <menu-unfold-outlined
-          v-if="collapsed"
-          class="trigger"
-          @click="() => (collapsed = !collapsed)"
-        />
-
-        <menu-fold-outlined
-          v-else
-          class="trigger"
-          @click="() => (collapsed = !collapsed)"
-        /> -->
-
-        <h1>Header</h1>
+        <h1>
+          <!-- Header and Child's value is {{ child?.value.state.selectedKeys[0] }} -->
+        </h1>
       </a-layout-header>
+
       <a-layout-content> <router-view></router-view> </a-layout-content>
-    </a-layout>
+    </div>
   </a-layout>
 </template>
 
 <script lang="ts" setup>
-// import { ref } from 'vue';
-// import { MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons-vue';
-import SideBar from '@/components/SideBar.vue';
+import SideBarv from '@/components/SideBarv.vue';
+import { ref, watch } from 'vue';
+import router from '@/router';
+
+// watch(
+//   () => child.value.state.selectedKeys[0],
+//   () => {
+//     if (!parseFloat(child.value?.state.selectedKeys[0])) {
+//       router.push(`/${child.value.state.selectedKeys[0]}`);
+
+//       console.log('push');
+//     }
+//   },
+// );
+
+const child = ref(null);
+const currentSelection = ref('');
+
+watch(
+  () => child.value?.state.selectedKeys[0], // Явно указываем зависимость
+  (newVal, oldVal) => {
+    if (newVal && newVal !== oldVal) {
+      if (!parseFloat(child.value.state.selectedKeys[0])) {
+        currentSelection.value = newVal; // Обновляем выбор
+        console.log('Navigating to:', newVal);
+        router.push(`/${newVal}`); // Перенаправляем пользователя
+      }
+    }
+  },
+);
+
+const goToComponent = () => {
+  console.log('go TO & ', child.value.state.selectedKeys[0]);
+  // почему неправильно работает
+};
+//   childValue.value = child.value.state2;
+//   let StringRoute = childValue.value;
+//   console.log('stringRoute is', StringRoute);
+//   if (parseFloat(StringRoute)) {
+//     console.log('число ебаное');
+//   } else {
+//     console.log('не число, поэтому пушим');
+//     router.push(`/${StringRoute}`);
+//   }
 </script>
 
 <style scoped>
+.Header-Content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
 #components-layout-demo-custom-trigger .trigger {
   font-size: 18px;
   line-height: 64px;

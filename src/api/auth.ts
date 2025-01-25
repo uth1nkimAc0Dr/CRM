@@ -17,7 +17,10 @@ export const outOfExpired = async (): Promise<boolean | undefined> => {
     if (accessToken) {
       try {
         if (isAccessExpired()) {
+          console.log('акцес есть');
+          // когда код падал 401, в этом месте он лежал
           const refreshSuccess = await refresh();
+          console.log('asdf;');
           if (!refreshSuccess) {
             console.log('вернулся isAcsExp = false');
             router.push('/login');
@@ -31,6 +34,7 @@ export const outOfExpired = async (): Promise<boolean | undefined> => {
         return true;
       }
     } else {
+      console.log('акцеса нет');
       try {
         const refreshSuccess = await refresh();
         console.log('вернулся isAcsExp = false');
@@ -63,11 +67,12 @@ apiClient.interceptors.request.use(
       return config;
     }
     if (localStorage.getItem('refreshToken')) {
+      console.log('работает интерсептор');
       let token = localStorage.getItem('accessToken');
       if (token) {
         try {
           const response = isAccessExpired();
-          console.log('isAExp is', response);
+          console.log('isAccessExpired:', response);
           if (response) {
             // access истек
             if (await refresh()) {
@@ -194,6 +199,7 @@ export const userAuth = async (userData: AuthData): Promise<Token | any> => {
 };
 
 export const refresh = async (): Promise<boolean> => {
+  console.log('зовется рефреш');
   if (localStorage.getItem('refreshToken') !== null) {
     const refreshToken = localStorage.getItem('refreshToken');
 
@@ -210,7 +216,8 @@ export const refresh = async (): Promise<boolean> => {
       return true;
     } catch (error) {
       console.error(`Ошибка обновления токена: ${error}`);
-      throw error;
+      return false;
+      // здесь был throw error
     }
   } else {
     return false;
@@ -238,11 +245,11 @@ export const isAccessExpired = (): boolean => {
   const payloadDataExp = payloadDataParsed.exp;
 
   const now = Math.floor(Date.now() * 0.001);
-  console.log('isAE. Pазница:', payloadDataExp - now);
   if (payloadDataExp - now < 300) {
-    console.log('isAcExp: истекает! Разница:', payloadDataExp - now);
+    console.log('isAcExp: истекает! Осталось:', payloadDataExp - now);
     return true;
   } else {
+    console.log('Еще не истекает. Pазница:', payloadDataExp - now);
     return false;
   }
 };
